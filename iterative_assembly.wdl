@@ -22,12 +22,14 @@ workflow iterativeAssembly {
             indexFiles = bwaIndex.indexFiles,
             outputPath= outputDir + "/" + "ReadsMappedToInputAssembly.bam"
     }
-    String? mappedOutputRead2 = if (defined(read2)) then outputDir + "/alignedReads/read2.fastq.gz" else read2
+
     call samtools.fastq as selectMappedReads {
         input:
             inputBam = bwaMem.bamFile,
             outputRead1 = outputDir + "/alignedReads/reads1.fastq.gz",
-            outputRead2 = mappedOutputRead2
+            outputRead2 = if (defined(read2)) then outputDir + "/alignedReads/read2.fastq.gz" else read2,
+            excludeFilter = 516, # UNMAP,QCFAIL will be filtered out
+            includeFilter = if (defined(read2)) then 2 else read2 # If paired, only properly paired reads should be used.
     }
 
     call spades.spades {
