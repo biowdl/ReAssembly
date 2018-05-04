@@ -37,4 +37,8 @@ workflow iterativeAssembly {
             outputDir = outputDir + "/spades"
     }
 
+    output {
+        File scaffolds = spades.scaffolds
+        File contigs = spades.contigs
+    }
 }
