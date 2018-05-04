@@ -29,7 +29,7 @@ workflow iterativeAssembly {
             outputRead1 = outputDir + "/alignedReads/reads1.fastq.gz",
             outputRead2 = if (defined(read2)) then outputDir + "/alignedReads/read2.fastq.gz" else read2,
             excludeFilter = 516, # UNMAP,QCFAIL will be filtered out
-            includeFilter = if (defined(read2)) then 2 else read2 # If paired, only properly paired reads should be used.
+            includeFilter = if (defined(read2)) then 2 else read2 # If paired, use reads that have PROPER_PAIR flag
     }
 
     call spades.spades {
