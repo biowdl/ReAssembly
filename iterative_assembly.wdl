@@ -4,17 +4,21 @@ import "tasks/samtools.wdl" as samtools
 import "tasks/spades.wdl" as spades
 import "tasks/biopet.wdl" as biopet
 
-
+# This workflow takes an existing assembly and reads that have already passed QC.
+# It maps the reads back to the assembly and uses the mapped reads to create a new assembly.
 workflow iterativeAssembly {
     File inputAssembly
     File read1
     File? read2
     String outputDir
 
+    # First index the assembly
     call bwa.index as bwaIndex {
         input:
             fasta = inputAssembly
     }
+
+    # Map the reads back to the assembly.
     call bwa.BwaMem as bwaMem {
         input:
             inputR1 = read1,
@@ -24,6 +28,8 @@ workflow iterativeAssembly {
             outputPath= outputDir + "/" + "ReadsMappedToInputAssembly.bam"
     }
 
+    # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
+    # QCFAIL is also filtered out. For paired reads, the PROPER_PAIR flag is used.
     call samtools.fastq as selectMappedReads {
         input:
             inputBam = bwaMem.bamFile,
@@ -46,8 +52,10 @@ workflow iterativeAssembly {
         }
     }
 
+    # This will default to the single mapped reads if there is no read2
     File selectedReads1 = select_first([syncSelectedReads.out1, selectMappedReads.read1 ])
-    File selectedReads2 = select_first([syncSelectedReads.out2, selectMappedReads.read2 ])
+    # This will default to none when there is no read2
+    File selectedReads2 = select_first([syncSelectedReads.out2, read2 ])
 
     call spades.spades {
         input:
