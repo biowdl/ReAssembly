@@ -53,38 +53,26 @@ workflow iterativeAssembly {
 
     # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
     # QCFAIL is also filtered out. For paired reads, the PROPER_PAIR flag is used.
-    call samtools.fastq as selectMappedReads {
+    call samtools.view as selectMappedReads {
         input:
-            inputBam = bwaMem.bamFile,
-            outputRead1 = outputDir + "/alignedReads/reads1.fq.gz",
-            outputRead2 = if (defined(read2)) then outputDir + "/alignedReads/read2.fq.gz" else read2,
-            excludeFilter = 516, # UNMAP,QCFAIL will be filtered out
-            includeFilter = if (defined(read2)) then 2 else read2 # If paired, use reads that have PROPER_PAIR flag
+            inFile= bwaMem.bamFile,
+            outputBam = true,
+            excludeSpecificFilter = 12, # UNMAP,MUNMAP should both be present for the read to be filtered out.
+            outputFileName = outputDir + "/unmapppedReadsFiltered.bam"
     }
 
-    # If paired. Reads need to be synced after selection.
-    if (defined(read2)) {
-        call biopet.FastqSync as syncSelectedReads {
-            input:
-                ref1 = read1,
-                ref2 = select_first([read2]),
-                in1 = selectMappedReads.read1,
-                in2 = select_first([selectMappedReads.read2]),
-                out1path = outputDir + "/mappedReads/reads1.fq.gz",
-                out2path = outputDir + "/mappedReads/reads2.fq.gz"
-        }
+    call picard.SamToFastq as SamToFastq {
+        input:
+            inputBam = selectMappedReads.outputFile,
+            outputRead1 = outputDir + "/filtered_reads1.fq.gz",
+            outputRead2 = if defined(read2) then outputDir + "/filtered_reads2.fq.gz" else read2
     }
-
-    # This will default to the single mapped reads if there is no read2
-    File selectedReads1 = select_first([syncSelectedReads.out1, selectMappedReads.read1 ])
-    # This will default to none when there is no read2
-    File? selectedReads2 = if defined(read2) then syncSelectedReads.out2 else read2
 
     # Allow subsampling in case number of mapped reads is too much for the assembler to handle.
     if (defined(subsampleNumber)) {
         call seqtk.sample as subsampleReads1 {
             input:
-                sequenceFile = selectedReads1,
+                sequenceFile = SamToFastq.read1,
                 number = subsampleNumber,
                 seed = subsampleSeed,
                 outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz",
@@ -93,7 +81,7 @@ workflow iterativeAssembly {
         if (defined(read2)) {
                     call seqtk.sample as subsampleReads2 {
                         input:
-                            sequenceFile = selectedReads2,
+                            sequenceFile = SamToFastq.read2,
                             number = subsampleNumber,
                             seed = subsampleSeed,
                             outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz",
@@ -103,8 +91,8 @@ workflow iterativeAssembly {
     }
 
     # Make sure subsampledReads are used if subsampling was used. Default to selectedReads
-    File subsampledReads1 = select_first(subsampleReads1.subsampledReads, selectedReads1)
-    File? subsampledReads2 = if defined(subsampleNumber) then subsampleReads2.subsampledReads else selectedReads2
+    File subsampledReads1 = select_first(subsampleReads1.subsampledReads, SamToFastq.read1)
+    File? subsampledReads2 = if defined(subsampleNumber) then subsampleReads2.subsampledReads else SamToFastq.read2
 
     call spades.spades {
         input:
