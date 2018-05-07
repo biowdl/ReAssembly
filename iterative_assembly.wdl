@@ -23,6 +23,7 @@ import "tasks/samtools.wdl" as samtools
 import "tasks/spades.wdl" as spades
 import "tasks/biopet.wdl" as biopet
 import "tasks/seqtk.wdl" as seqtk
+import "tasks/picard.wdl" as picard
 
 # This workflow takes an existing assembly and reads that have already passed QC.
 # It maps the reads back to the assembly and uses the mapped reads to create a new assembly.
