@@ -43,7 +43,7 @@ workflow iterativeAssembly {
     }
 
     # Map the reads back to the assembly.
-    call bwa.BwaMem as bwaMem {
+    call bwa.mem as bwaMem {
         input:
             inputR1 = read1,
             inputR2 = read2,
