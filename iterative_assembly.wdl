@@ -39,7 +39,8 @@ workflow iterativeAssembly {
     # First index the assembly
     call bwa.index as bwaIndex {
         input:
-            fasta = inputAssembly
+            fasta = inputAssembly,
+            outputDir = outputDir + "/bwaIndex"
     }
 
     # Map the reads back to the assembly.
