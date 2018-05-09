@@ -92,7 +92,7 @@ workflow iterativeAssembly {
     }
 
     # Make sure subsampledReads are used if subsampling was used. Default to selectedReads
-    File subsampledReads1 = select_first(subsampleReads1.subsampledReads, SamToFastq.read1)
+    File subsampledReads1 = select_first([subsampleReads1.subsampledReads, SamToFastq.read1])
     File? subsampledReads2 = if defined(subsampleNumber) then subsampleReads2.subsampledReads else SamToFastq.read2
 
     call spades.spades {
