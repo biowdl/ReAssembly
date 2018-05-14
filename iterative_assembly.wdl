@@ -83,7 +83,7 @@ workflow iterativeAssembly {
         if (defined(read2)) {
                     call seqtk.sample as subsampleReads2 {
                         input:
-                            sequenceFile = SamToFastq.read2,
+                            sequenceFile = select_first([SamToFastq.read2]),
                             number = subsampleNumber,
                             seed = subsampleSeed,
                             outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz",
