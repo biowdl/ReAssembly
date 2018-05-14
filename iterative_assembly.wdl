@@ -86,7 +86,7 @@ workflow iterativeAssembly {
                             sequenceFile = select_first([SamToFastq.read2]),
                             number = subsampleNumber,
                             seed = subsampleSeed,
-                            outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz",
+                            outFilePath = outputDir + "/subsampling/subsampledReads2.fq.gz",
                             zip=true
                     }
         }
