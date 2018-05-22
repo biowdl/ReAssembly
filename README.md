@@ -1,4 +1,4 @@
-# iterative assembly
+# ReAssembly
 
 A pipeline that tries to improve your assembly.
 1. Takes your current assembly
