@@ -28,7 +28,7 @@ import "tasks/picard.wdl" as picard
 # This workflow takes an existing assembly and reads that have already passed QC.
 # It maps the reads back to the assembly and uses the mapped reads to create a new assembly.
 # This workflow can be run on its own spades.contigs or spades.scaffolds output
-workflow iterativeAssembly {
+workflow ReAssembly {
     File inputAssembly
     File read1
     File? read2
@@ -50,7 +50,7 @@ workflow iterativeAssembly {
             inputR2 = read2,
             referenceFasta = bwaIndex.indexedFasta,
             indexFiles = bwaIndex.indexFiles,
-            outputPath= outputDir + "/" + "ReadsMappedToInputAssembly.bam"
+            outputPath= outputDir + "/ReadsMappedToInputAssembly.bam"
     }
 
     # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
@@ -81,14 +81,14 @@ workflow iterativeAssembly {
                 zip=true
         }
         if (defined(read2)) {
-                    call seqtk.sample as subsampleReads2 {
-                        input:
-                            sequenceFile = select_first([SamToFastq.read2]),
-                            number = subsampleNumber,
-                            seed = subsampleSeed,
-                            outFilePath = outputDir + "/subsampling/subsampledReads2.fq.gz",
-                            zip=true
-                    }
+            call seqtk.sample as subsampleReads2 {
+                input:
+                    sequenceFile = select_first([SamToFastq.read2]),
+                    number = subsampleNumber,
+                    seed = subsampleSeed,
+                    outFilePath = outputDir + "/subsampling/subsampledReads2.fq.gz",
+                    zip=true
+            }
         }
     }
 
