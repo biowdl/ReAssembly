@@ -77,8 +77,7 @@ workflow ReAssembly {
                 sequenceFile = SamToFastq.read1,
                 number = subsampleNumber,
                 seed = subsampleSeed,
-                outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz",
-                zip=true
+                outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz"
         }
         if (defined(read2)) {
             call seqtk.sample as subsampleReads2 {
@@ -86,8 +85,7 @@ workflow ReAssembly {
                     sequenceFile = select_first([SamToFastq.read2]),
                     number = subsampleNumber,
                     seed = subsampleSeed,
-                    outFilePath = outputDir + "/subsampling/subsampledReads2.fq.gz",
-                    zip=true
+                    outFilePath = outputDir + "/subsampling/subsampledReads2.fq.gz"
             }
         }
     }
