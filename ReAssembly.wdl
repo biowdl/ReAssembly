@@ -40,13 +40,13 @@ workflow ReAssembly {
         String outputDir
     }
 
-    String outputDir = outputDir
+    String outDir = outputDir
 
     # First index the assembly
     call bwa.Index as bwaIndex {
         input:
             fasta = inputAssembly,
-            outputDir = outputDir + "/bwaIndex"
+            outputDir = outDir + "/bwaIndex"
     }
 
     # Map the reads back to the assembly.
@@ -55,7 +55,7 @@ workflow ReAssembly {
             inputR1 = read1,
             inputR2 = read2,
             bwaIndex = bwaIndex.outputIndex,
-            outputPath = outputDir + "/ReadsMappedToInputAssembly.bam"
+            outputPath = outDir + "/ReadsMappedToInputAssembly.bam"
     }
 
     # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
@@ -65,14 +65,14 @@ workflow ReAssembly {
             inFile= bwaMem.bamFile.file,
             outputBam = true,
             excludeSpecificFilter = 12, # UNMAP,MUNMAP should both be present for the read to be filtered out.
-            outputFileName = outputDir + "/unmapppedReadsFiltered.bam"
+            outputFileName = outDir + "/unmapppedReadsFiltered.bam"
     }
 
     call picard.SamToFastq as SamToFastq {
         input:
             inputBam = selectMappedReads.outputFile,
-            outputRead1 = outputDir + "/filtered_reads1.fq.gz",
-            outputRead2 = if defined(read2) then outputDir + "/filtered_reads2.fq.gz" else read2
+            outputRead1 = outDir + "/filtered_reads1.fq.gz",
+            outputRead2 = if defined(read2) then outDir + "/filtered_reads2.fq.gz" else read2
     }
 
     # Allow subsampling in case number of mapped reads is too much for the assembler to handle.
@@ -82,7 +82,7 @@ workflow ReAssembly {
                 sequenceFile = SamToFastq.read1,
                 number = subsampleNumber,
                 seed = subsampleSeed,
-                outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz"
+                outFilePath = outDir + "/subsampling/subsampledReads1.fq.gz"
         }
         if (defined(read2)) {
             call seqtk.Sample as subsampleReads2 {
@@ -103,7 +103,7 @@ workflow ReAssembly {
         input:
             read1 = subsampledReads1,
             read2 = subsampledReads2,
-            outputDir = outputDir + "/spades"
+            outputDir = outDir + "/spades"
     }
 
     output {

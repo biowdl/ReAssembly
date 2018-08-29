@@ -19,8 +19,16 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import java.io.File
+
 import nl.biopet.utils.biowdl.PipelineSuccess
 
 trait ReAssemblySuccess extends ReAssembly with PipelineSuccess {
-  //TODO: add tests
+  val unmapppedReadsFilteredFile: File = createFile("unmapppedReadsFiltered.bam")
+  val readsMappedToInputAssemblyFile: File = createFile("ReadsMappedToInputAssembly.bam")
+  val filteredR1File: File = createFile("filtered_reads1.fq.gz")
+  val filteredR2File: Option[File] = createOptionalFile(read2.isDefined, "filtered_reads2.fq.gz")
+
+  val scaffoldsFastaFile: File = createFile("spades", "scaffolds.fasta")
+  val contigsFastFile: File = createFile("spades", "contigs.fasta")
 }
