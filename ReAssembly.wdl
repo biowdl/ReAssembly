@@ -1,3 +1,5 @@
+version 1.0
+
 # Copyright (c) 2018 Sequencing Analysis Support Core - Leiden University Medical Center
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,58 +31,61 @@ import "tasks/picard.wdl" as picard
 # It maps the reads back to the assembly and uses the mapped reads to create a new assembly.
 # This workflow can be run on its own spades.contigs or spades.scaffolds output
 workflow ReAssembly {
-    File inputAssembly
-    File read1
-    File? read2
-    Int? subsampleNumber
-    Int? subsampleSeed
-    String outputDir
+    input {
+        File inputAssembly
+        File read1
+        File? read2
+        Int? subsampleNumber
+        Int? subsampleSeed
+        String outputDir
+    }
+
+    String outDir = outputDir
 
     # First index the assembly
-    call bwa.index as bwaIndex {
+    call bwa.Index as bwaIndex {
         input:
             fasta = inputAssembly,
-            outputDir = outputDir + "/bwaIndex"
+            outputDir = outDir + "/bwaIndex"
     }
 
     # Map the reads back to the assembly.
-    call bwa.mem as bwaMem {
+    call bwa.Mem as bwaMem {
         input:
             inputR1 = read1,
             inputR2 = read2,
-            referenceFasta = bwaIndex.indexedFasta,
-            indexFiles = bwaIndex.indexFiles,
-            outputPath= outputDir + "/ReadsMappedToInputAssembly.bam"
+            bwaIndex = bwaIndex.outputIndex,
+            outputPath = outDir + "/ReadsMappedToInputAssembly.bam"
     }
 
     # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
     # QCFAIL is also filtered out. For paired reads, the PROPER_PAIR flag is used.
-    call samtools.view as selectMappedReads {
+    call samtools.View as selectMappedReads {
         input:
-            inFile= bwaMem.bamFile,
+            inFile= bwaMem.bamFile.file,
             outputBam = true,
             excludeSpecificFilter = 12, # UNMAP,MUNMAP should both be present for the read to be filtered out.
-            outputFileName = outputDir + "/unmapppedReadsFiltered.bam"
+            outputFileName = outDir + "/unmapppedReadsFiltered.bam"
     }
 
     call picard.SamToFastq as SamToFastq {
         input:
             inputBam = selectMappedReads.outputFile,
-            outputRead1 = outputDir + "/filtered_reads1.fq.gz",
-            outputRead2 = if defined(read2) then outputDir + "/filtered_reads2.fq.gz" else read2
+            outputRead1 = outDir + "/filtered_reads1.fq.gz",
+            outputRead2 = if defined(read2) then outDir + "/filtered_reads2.fq.gz" else read2
     }
 
     # Allow subsampling in case number of mapped reads is too much for the assembler to handle.
     if (defined(subsampleNumber)) {
-        call seqtk.sample as subsampleReads1 {
+        call seqtk.Sample as subsampleReads1 {
             input:
                 sequenceFile = SamToFastq.read1,
                 number = subsampleNumber,
                 seed = subsampleSeed,
-                outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz"
+                outFilePath = outDir + "/subsampling/subsampledReads1.fq.gz"
         }
         if (defined(read2)) {
-            call seqtk.sample as subsampleReads2 {
+            call seqtk.Sample as subsampleReads2 {
                 input:
                     sequenceFile = select_first([SamToFastq.read2]),
                     number = subsampleNumber,
@@ -94,15 +99,15 @@ workflow ReAssembly {
     File subsampledReads1 = select_first([subsampleReads1.subsampledReads, SamToFastq.read1])
     File? subsampledReads2 = if defined(subsampleNumber) then subsampleReads2.subsampledReads else SamToFastq.read2
 
-    call spades.spades {
+    call spades.Spades {
         input:
             read1 = subsampledReads1,
             read2 = subsampledReads2,
-            outputDir = outputDir + "/spades"
+            outputDir = outDir + "/spades"
     }
 
     output {
-        File scaffolds = spades.scaffolds
-        File contigs = spades.contigs
+        File scaffolds = Spades.scaffolds
+        File contigs = Spades.contigs
     }
 }
