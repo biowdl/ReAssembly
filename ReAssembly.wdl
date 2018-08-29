@@ -1,3 +1,5 @@
+version 1.0
+
 # Copyright (c) 2018 Sequencing Analysis Support Core - Leiden University Medical Center
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,12 +31,14 @@ import "tasks/picard.wdl" as picard
 # It maps the reads back to the assembly and uses the mapped reads to create a new assembly.
 # This workflow can be run on its own spades.contigs or spades.scaffolds output
 workflow ReAssembly {
-    File inputAssembly
-    File read1
-    File? read2
-    Int? subsampleNumber
-    Int? subsampleSeed
-    String outputDir
+    input {
+        File inputAssembly
+        File read1
+        File? read2
+        Int? subsampleNumber
+        Int? subsampleSeed
+        String outputDir
+    }
 
     # First index the assembly
     call bwa.index as bwaIndex {
