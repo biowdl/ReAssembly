@@ -41,25 +41,24 @@ workflow ReAssembly {
     }
 
     # First index the assembly
-    call bwa.index as bwaIndex {
+    call bwa.Index as bwaIndex {
         input:
             fasta = inputAssembly,
             outputDir = outputDir + "/bwaIndex"
     }
 
     # Map the reads back to the assembly.
-    call bwa.mem as bwaMem {
+    call bwa.Mem as bwaMem {
         input:
             inputR1 = read1,
             inputR2 = read2,
-            referenceFasta = bwaIndex.indexedFasta,
-            indexFiles = bwaIndex.indexFiles,
+            bwaIndex = bwaIndex.outputIndex,
             outputPath= outputDir + "/ReadsMappedToInputAssembly.bam"
     }
 
     # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
     # QCFAIL is also filtered out. For paired reads, the PROPER_PAIR flag is used.
-    call samtools.view as selectMappedReads {
+    call samtools.View as selectMappedReads {
         input:
             inFile= bwaMem.bamFile,
             outputBam = true,
@@ -76,7 +75,7 @@ workflow ReAssembly {
 
     # Allow subsampling in case number of mapped reads is too much for the assembler to handle.
     if (defined(subsampleNumber)) {
-        call seqtk.sample as subsampleReads1 {
+        call seqtk.Sample as subsampleReads1 {
             input:
                 sequenceFile = SamToFastq.read1,
                 number = subsampleNumber,
@@ -84,7 +83,7 @@ workflow ReAssembly {
                 outFilePath = outputDir + "/subsampling/subsampledReads1.fq.gz"
         }
         if (defined(read2)) {
-            call seqtk.sample as subsampleReads2 {
+            call seqtk.Sample as subsampleReads2 {
                 input:
                     sequenceFile = select_first([SamToFastq.read2]),
                     number = subsampleNumber,
@@ -98,7 +97,7 @@ workflow ReAssembly {
     File subsampledReads1 = select_first([subsampleReads1.subsampledReads, SamToFastq.read1])
     File? subsampledReads2 = if defined(subsampleNumber) then subsampleReads2.subsampledReads else SamToFastq.read2
 
-    call spades.spades {
+    call spades.Spades {
         input:
             read1 = subsampledReads1,
             read2 = subsampledReads2,
@@ -106,7 +105,7 @@ workflow ReAssembly {
     }
 
     output {
-        File scaffolds = spades.scaffolds
-        File contigs = spades.contigs
+        File scaffolds = Spades.scaffolds
+        File contigs = Spades.contigs
     }
 }
