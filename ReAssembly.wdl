@@ -40,6 +40,8 @@ workflow ReAssembly {
         String outputDir
     }
 
+    String outputDir = outputDir
+
     # First index the assembly
     call bwa.Index as bwaIndex {
         input:
@@ -53,7 +55,7 @@ workflow ReAssembly {
             inputR1 = read1,
             inputR2 = read2,
             bwaIndex = bwaIndex.outputIndex,
-            outputPath= outputDir + "/ReadsMappedToInputAssembly.bam"
+            outputPath = outputDir + "/ReadsMappedToInputAssembly.bam"
     }
 
     # Get the reads that mapped to the assembly. This means filtering out the UNMAP flag.
