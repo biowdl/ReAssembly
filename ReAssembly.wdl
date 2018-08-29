@@ -60,7 +60,7 @@ workflow ReAssembly {
     # QCFAIL is also filtered out. For paired reads, the PROPER_PAIR flag is used.
     call samtools.View as selectMappedReads {
         input:
-            inFile= bwaMem.bamFile,
+            inFile= bwaMem.bamFile.file,
             outputBam = true,
             excludeSpecificFilter = 12, # UNMAP,MUNMAP should both be present for the read to be filtered out.
             outputFileName = outputDir + "/unmapppedReadsFiltered.bam"
