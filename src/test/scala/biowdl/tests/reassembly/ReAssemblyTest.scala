@@ -19,7 +19,10 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+package biowdl.tests.reassembly
+
 import java.io.File
+
 import nl.biopet.utils.biowdl.fixtureFile
 
 class ReAssemblyTest extends ReAssemblySuccess {
