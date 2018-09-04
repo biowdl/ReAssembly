@@ -80,7 +80,7 @@ workflow ReAssembly {
         call seqtk.Sample as subsampleReads1 {
             input:
                 sequenceFile = SamToFastq.read1,
-                number = subsampleNumber,
+                fractionOrNumber = select_first([subsampleNumber]),
                 seed = subsampleSeed,
                 outFilePath = outDir + "/subsampling/subsampledReads1.fq.gz"
         }
@@ -88,7 +88,7 @@ workflow ReAssembly {
             call seqtk.Sample as subsampleReads2 {
                 input:
                     sequenceFile = select_first([SamToFastq.read2]),
-                    number = subsampleNumber,
+                    fractionOrNumber = select_first([subsampleNumber]),
                     seed = subsampleSeed,
                     outFilePath = outputDir + "/subsampling/subsampledReads2.fq.gz"
             }
