@@ -69,7 +69,8 @@ workflow ReAssembly {
 
     call samtools.Index as mappedReadsIndex {
       input:
-        bamFile = selectMappedReads.outputFile
+        bamFile = selectMappedReads.outputFile,
+        bamIndexPath = sub(selectMappedReads.outputFile, ".bam$", ".bai")
     }
 
     call picard.SamToFastq as SamToFastq {
