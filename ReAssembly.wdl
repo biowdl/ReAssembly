@@ -23,9 +23,10 @@ version 1.0
 import "tasks/bwa.wdl" as bwa
 import "tasks/samtools.wdl" as samtools
 import "tasks/spades.wdl" as spades
-import "tasks/biopet.wdl" as biopet
+import "tasks/biopet/biopet.wdl" as biopet
 import "tasks/seqtk.wdl" as seqtk
 import "tasks/picard.wdl" as picard
+import "tasks/common.wdl" as common
 
 # This workflow takes an existing assembly and reads that have already passed QC.
 # It maps the reads back to the assembly and uses the mapped reads to create a new assembly.
@@ -33,8 +34,7 @@ import "tasks/picard.wdl" as picard
 workflow ReAssembly {
     input {
         File inputAssembly
-        File read1
-        File? read2
+        FastqPair reads
         Int? subsampleNumber
         Int? subsampleSeed
         String outputDir
@@ -52,8 +52,7 @@ workflow ReAssembly {
     # Map the reads back to the assembly.
     call bwa.Mem as bwaMem {
         input:
-            inputR1 = read1,
-            inputR2 = read2,
+            inputFastq = reads,
             bwaIndex = bwaIndex.outputIndex,
             outputPath = outDir + "/ReadsMappedToInputAssembly.bam"
     }
@@ -62,17 +61,23 @@ workflow ReAssembly {
     # QCFAIL is also filtered out. For paired reads, the PROPER_PAIR flag is used.
     call samtools.View as selectMappedReads {
         input:
-            inFile= bwaMem.bamFile.file,
+            inFile = bwaMem.bamFile.file,
             outputBam = true,
             excludeSpecificFilter = 12, # UNMAP,MUNMAP should both be present for the read to be filtered out.
             outputFileName = outDir + "/unmapppedReadsFiltered.bam"
     }
 
+    call samtools.Index as mappedReadsIndex {
+      input:
+        bamFile = selectMappedReads.outputFile,
+        bamIndexPath = sub(selectMappedReads.outputFile, ".bam$", ".bai")
+    }
+
     call picard.SamToFastq as SamToFastq {
         input:
-            inputBam = selectMappedReads.outputFile,
+            inputBam = mappedReadsIndex.outputBam,
             outputRead1 = outDir + "/filtered_reads1.fq.gz",
-            outputRead2 = if defined(read2) then outDir + "/filtered_reads2.fq.gz" else read2
+            outputRead2 = if defined(reads.R2) then outDir + "/filtered_reads2.fq.gz" else reads.R2
     }
 
     # Allow subsampling in case number of mapped reads is too much for the assembler to handle.
@@ -84,7 +89,7 @@ workflow ReAssembly {
                 seed = subsampleSeed,
                 outFilePath = outDir + "/subsampling/subsampledReads1.fq.gz"
         }
-        if (defined(read2)) {
+        if (defined(reads.R2)) {
             call seqtk.Sample as subsampleReads2 {
                 input:
                     sequenceFile = select_first([SamToFastq.read2]),

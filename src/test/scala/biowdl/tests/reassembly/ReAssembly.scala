@@ -37,10 +37,10 @@ trait ReAssembly extends Pipeline {
   override def inputs: Map[String, Any] =
     super.inputs ++
       Map(
-        "ReAssembly.read1" -> read1.getAbsolutePath,
+        "ReAssembly.reads" -> (Map("R1" -> read1.getAbsolutePath) ++ read2.map(
+          "R2" -> _.getAbsolutePath)),
         "ReAssembly.inputAssembly" -> inputAssembly.getAbsolutePath,
         "ReAssembly.outputDir" -> outputDir.getAbsolutePath
-      ) ++
-      read2.map("ReAssembly.read2" -> _.getAbsolutePath)
+      )
 
 }
